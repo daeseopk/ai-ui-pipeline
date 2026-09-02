@@ -72,7 +72,7 @@ Step 4/5 결과를 `REUSE / COMPOSE / EXTEND / CREATE_LOCAL / CREATE_SHARED / BL
 
 ## Step 8 — Source Code Generation
 
-Implementation Plan이 확정된 뒤에만 실행한다. 반드시 지킬 것 / 금지 사항 / 기존 컴포넌트가 Design을 완전히 만족 못 할 때의 해결 순서(props/config → 조합 → 확장 → 그래도 안 되면 신규)는 `references/implementation-rules.md`. `convention.md`가 폴더 구조·네이밍·export 정책의 최종 권한을 가진다 — 이 스킬은 그걸 따를 뿐 재정의하지 않는다.
+Implementation Plan이 확정된 뒤에만 실행한다. 반드시 지킬 것 / 금지 사항 / 기존 컴포넌트가 Design을 완전히 만족 못 할 때의 해결 순서(props/config → 조합 → 확장 → 그래도 안 되면 신규) / `vercel-react-best-practices`가 설치돼 있을 때 성능 컨벤션 적용 방법은 `references/implementation-rules.md`. `convention.md`가 폴더 구조·네이밍·export 정책의 최종 권한을 가진다 — 이 스킬은 그걸 따를 뿐 재정의하지 않는다.
 
 ## Step 9 — Build / Typecheck / Lint
 
@@ -99,5 +99,5 @@ pnpm typecheck && pnpm lint && pnpm build
 | `references/layout-planning.md` | Step 3 — 실제 사용법은 spec-to-design의 stylegallery-recipe.md로 연결 |
 | `references/component-mapping.md` | Step 4 — 디자인 시스템 매핑 우선순위 (있는 경우) + 없을 때의 기본 흐름 |
 | `references/gap-analysis.md` | Step 6 |
-| `references/implementation-rules.md` | Step 8 |
+| `references/implementation-rules.md` | Step 8 — includes when/how to apply `vercel-react-best-practices`, if installed |
 | `references/qa-rules.md` | Step 10 |

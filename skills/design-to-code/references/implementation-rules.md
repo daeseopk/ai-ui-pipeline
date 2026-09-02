@@ -23,6 +23,15 @@ Work through this order before concluding a new component is needed — this is 
 - Existing state management choice per data category (`convention.md`, or CLAUDE.md §3.1's four-category mapping if `convention.md` hasn't specified one yet)
 - Existing API abstraction, if one exists in the project
 - Existing folder structure (`convention.md`)
+- Performance conventions from `vercel-react-best-practices` where relevant (see below), if that skill is installed alongside this one
+
+## Performance conventions — vercel-react-best-practices (if installed)
+
+Check whether `../../vercel-react-best-practices/` exists as a sibling skill before relying on it — it's not a hard dependency of this skill, just a common companion. If it's there, consult its `rules/` while writing code in this step, not as an afterthought. Apply rules by priority, per its own `SKILL.md` table: CRITICAL (`async-*` eliminating waterfalls, `bundle-*` bundle size) → HIGH (`server-*`) → MEDIUM-HIGH (`client-*`) → MEDIUM (`rerender-*`, `rendering-*`) → LOW-MEDIUM (`js-*`) → LOW (`advanced-*`).
+
+**Cite the rule file** when applying or recommending a pattern (e.g. "hoisted this select handler per `rerender-no-inline-components.md`") — this keeps the Implementation Report traceable instead of a vague "optimized for performance" claim, and lets a reviewer check the specific rule rather than trusting the claim.
+
+Not every category applies to every screen or every target project — `server-*` rules assume Next.js Server Components/Server Actions; skip that whole category on a pure client-side SPA rather than forcing an RSC pattern where there's no server-component layer. Check the target project's actual architecture (Step 5) before deciding which categories are even in scope.
 
 ## Forbidden
 
