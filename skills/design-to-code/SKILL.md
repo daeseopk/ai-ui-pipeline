@@ -25,15 +25,24 @@ StyleGallery가 컴포넌트를 고르거나 디자인 시스템이 레이아웃
 
 ## Step 0 — Prerequisites
 
+### 입력 모드 판단 (`{input_mode}`) — 가장 먼저 결정
+
+이후 Step 1/Step 10을 포함한 모든 단계가 이 값에 따라 갈라진다.
+
+- **Case 1 — `mcp`**: Claude Design 화면 링크(`open_url`) 또는 `project_id`로 시작 — 이 세션에 라이브 `claude-design` MCP 접근이 있다.
+- **Case 2 — `local`**: `design-export` 스킬로 이미 뽑아온 로컬 `.dc.html` 파일(들)로 시작 — Claude Design 계정/MCP 접근이 전혀 없어도 된다.
+
+**스킬을 시작하면 가장 먼저 사용자에게 Case 1 / Case 2 중 어떤 방식으로 진행할지 직접 묻는다** (예: AskUserQuestion). 사용자의 최초 요청 안에 이미 방식이 명확히 드러나 있으면(예: URL/`project_id`를 직접 주며 "Case 1로" 라고 명시, 또는 로컬 `.dc.html` 경로를 주며 "MCP 접근 없이" 라고 명시) 그 답을 그대로 확정하고 다시 묻지 않는다. 그 외에는 URL/파일 경로만 보고 조용히 넘겨짚지 않고 반드시 질문해서 `{input_mode}`를 확정한다 — 애매한 채로 다음 단계로 진행하지 않는다.
+
 순서대로 확인하고, 하나라도 실패하면 **거기서 멈춘다** — 다음 단계로 조용히 진행하지 않는다.
 
-1. `claude-design` MCP 툴 호출 가능 여부 — `design-env-setup`의 최종 체크리스트가 만족됐는지 확인 (별도로 재검증하지 말고 `ToolSearch query="select:mcp__claude-design__list_design_systems"`로 spot-check).
-2. **타겟 프로젝트에 디자인 시스템 패키지가 있다면, 그게 실제 npm 의존성으로 설치돼 있는지** — `package.json`을 직접 읽어 확인한다. Claude Design 안에서 쓰던 `window.<Bundle>.*` 전역 참조는 소스화 결과물에 쓰지 않으므로, 진짜 `import`가 가능해야 한다. 없으면 설치부터 하고(패키지 매니저로 add + 필요하면 스타일시트를 entry CSS에 import) 다음 단계로. **디자인 시스템이 애초에 없는 프로젝트라면 이 항목은 그냥 통과** — Step 4/6에서 항상 `CREATE_LOCAL`/`COMPOSE`로 흐르게 된다.
-3. **`convention.md`가 프로젝트에 존재하는지** — 없으면 멈추고 사용자에게 먼저 만들어달라고 요청한다. CLAUDE.md 기본값으로 조용히 대체하지 않는다 (정보 없으면 추측하지 않는다는 이 스킬 전체의 원칙과 동일).
+1. **(Case 1에서만) `claude-design` MCP 툴 호출 가능 여부** — `design-env-setup`의 최종 체크리스트가 만족됐는지 확인 (별도로 재검증하지 말고 `ToolSearch query="select:mcp__claude-design__list_design_systems"`로 spot-check). **Case 2는 이 항목을 건너뛴다** — MCP 접근이 없는 게 정상 전제다.
+2. **타겟 프로젝트에 디자인 시스템 패키지가 있다면, 그게 실제 npm 의존성으로 설치돼 있는지** — `package.json`을 직접 읽어 확인한다. Claude Design 안에서 쓰던 `window.<Bundle>.*` 전역 참조는 소스화 결과물에 쓰지 않으므로, 진짜 `import`가 가능해야 한다. 없으면 설치부터 하고(패키지 매니저로 add + 필요하면 스타일시트를 entry CSS에 import) 다음 단계로. **디자인 시스템이 애초에 없는 프로젝트라면 이 항목은 그냥 통과** — Step 4/6에서 항상 `CREATE_LOCAL`/`COMPOSE`로 흐르게 된다. (두 케이스 공통)
+3. **`convention.md`가 프로젝트에 존재하는지** — 없으면 멈추고 사용자에게 먼저 만들어달라고 요청한다. CLAUDE.md 기본값으로 조용히 대체하지 않는다 (정보 없으면 추측하지 않는다는 이 스킬 전체의 원칙과 동일). (두 케이스 공통)
 
 ## Step 1 — Design Source Validation
 
-사용자가 준 Claude Design 화면 링크(`open_url`, 여러 개 가능)로 시작한다. 코드 생성으로 바로 넘어가지 않고 먼저 검증한다 — 검증 방법과 출력 형식은 `references/design-artifact.md`.
+`{input_mode}`(Step 0에서 정한 값)로 시작한다 — Case 1은 사용자가 준 Claude Design 화면 링크(`open_url`, 여러 개 가능), Case 2는 로컬 `.dc.html` 파일(들)로, 경로를 이미 받았으면 그걸로 진행하고 아니면 먼저 로컬 파일을 찾아 사용자에게 어떤 파일로 작업할지(또는 새 파일 추가할지) 확인한다. 코드 생성으로 바로 넘어가지 않고 먼저 검증한다 — 케이스별 파일 선택/검증 방법과 출력 형식은 `references/design-artifact.md`.
 
 ```
 ✓ Design URL accessible
@@ -84,7 +93,7 @@ pnpm typecheck && pnpm lint && pnpm build
 
 ## Step 10 — Visual / Functional QA
 
-`pnpm dev`로 실제 렌더 후 브라우저 스크린샷을 Claude Design의 `open_url` 스크린샷과 비교한다. 체크 항목과 결과 표기 형식은 `references/qa-rules.md`. 화면이 여러 개면 화면별로 이 체크포인트를 거친 뒤 다음 화면으로 넘어간다 (`spec-to-design`과 동일한 패턴).
+`pnpm dev`로 실제 렌더 후 브라우저 스크린샷을 비교 대상과 비교한다 — Case 1은 Claude Design의 `open_url` 스크린샷, Case 2는 사용자가 제공한 참고 이미지(없으면 정적 마크업 구조만으로 QA). `{input_mode}`별 처리와 체크 항목·결과 표기 형식은 `references/qa-rules.md`. 화면이 여러 개면 화면별로 이 체크포인트를 거친 뒤 다음 화면으로 넘어간다 (`spec-to-design`과 동일한 패턴).
 
 ## Step 11 — Implementation Report
 

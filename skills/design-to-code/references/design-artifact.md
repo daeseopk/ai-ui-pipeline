@@ -2,7 +2,9 @@
 
 ## Step 1 — Design Source Validation
 
-Before touching any code, confirm the Claude Design screen is actually usable as a source. Run these checks in order and stop on the first failure:
+Before touching any code, confirm the design source is actually usable. Which checks apply depends on `{input_mode}` from Step 0 — run the matching case below and stop on the first failure.
+
+### Case 1 — `mcp` (live Claude Design access)
 
 ```
 project_id/path parsed from the open_url the user gave you
@@ -12,10 +14,8 @@ project_id/path parsed from the open_url the user gave you
   → any asset references inside it (images, icons) resolve
 ```
 
-Report the result in this exact shape:
-
 ```
-Design Source Validation
+Design Source Validation (mcp)
 
 ✓ Design URL accessible
 ✓ Screen found
@@ -25,7 +25,36 @@ Design Source Validation
 Status: READY
 ```
 
-or
+### Case 2 — `local` (`.dc.html` file from `design-export`)
+
+**File selection (before validation):** if the user hasn't already given a specific file path, search for local `.dc.html` files first — scoped to the target project directory only (excluding `node_modules`), never outside it. `design-export` writes to the current working directory by default, so a project-scoped search is where a real export normally lands; don't widen the search to the scratchpad or any other path outside the project.
+
+- **One or more found**: show the list (filename, path, modified time) and ask the user whether to work with one of them, or add a new file to the session instead. Don't silently pick the newest one for them.
+- **None found**: ask the user to add a `.dc.html` file (export a new one via `design-export`, or attach one directly) — don't proceed without one.
+- Only the path the user actually confirms moves on to the check below.
+
+```
+file path selected/given by the user
+  → file exists and is readable
+  → content is non-empty and looks like a real .dc.html
+    (has <script type="text/x-dc"> and a componentDidMount call)
+```
+
+Skip the asset check entirely — `design-export` never pulls design-system bundle assets by design (see its Step 3), so there's nothing to verify here.
+
+```
+Design Source Validation (local)
+
+✓ File found and readable
+✓ Design specification found
+– Assets accessible (skipped — not applicable to a local export)
+
+Status: READY
+```
+
+If the user gave a file with no accompanying link, leave `screen.url` as `Unknown` (see schema below) rather than asking for one just to fill the field — this only matters later if Step 10 needs a live screenshot to compare against.
+
+### Failure (either case)
 
 ```
 ✗ Design specification unavailable
@@ -44,10 +73,10 @@ A Claude Design screen is not just a URL — treat it as a structured artifact w
 
 ```yaml
 screen:
-  id: <project_id>/<path>          # from the open_url
+  id: <project_id>/<path>          # Case 1: from the open_url. Case 2: local file name/path
   name: <data-screen-label if canvas mode, else the file path>
-  url: <the open_url the user gave you — never the serve_url>
-  version: <read_file's returned content hash/timestamp, if available>
+  url: <the open_url the user gave you — never the serve_url. Case 2 with no link given: Unknown>
+  version: <Case 1: read_file's returned content hash/timestamp. Case 2: file mtime, or Unknown>
 
   layout:
     hierarchy: <React.createElement tree under componentDidMount — component + prop + child nesting>
@@ -64,7 +93,7 @@ screen:
 
 ## What is and isn't extractable from a real `.dc.html`
 
-Confirmed from actual Claude Design output (`spec-to-design/references/claude-design-recipe.md`, and this session's own P-01 build):
+Applies equally to Case 1 and Case 2 — this is about the `.dc.html` content itself, not how it arrived. Confirmed from actual Claude Design output (`spec-to-design/references/claude-design-recipe.md`, and this session's own P-01 build):
 
 **Extractable directly:**
 - Which components are mounted (`window.<BundleGlobal>.X` references, if a design system is in use) and the literal props passed to each
